@@ -26,6 +26,11 @@ b-server: $(out_dir)
 r-server: b-server
 	$(out_dir)/$(server_out)
 
+
+# TESTING ----------------------------------------
+
+test:
+	go test ./...
  
 # ALL --------------------------------------------
 
