@@ -6,32 +6,21 @@ import (
 	"reflect"
 )
 
-type ProtocolErrorVariant uint8
-
-const (
-	FileNameToLarge ProtocolErrorVariant = iota
+var (
+	FileNameToLargeError     = errors.New("file name to long for header")
+	FileNameToSmallError     = errors.New("file name to long for header")
+	ChunkLargerThanFileError = errors.New("chunk size larger than total file size")
 )
 
-func (pev ProtocolErrorVariant) Error() string {
-	return reflect.TypeOf(pev).Name()
-}
-
-func (pev ProtocolErrorVariant) Is(err error) bool {
-	if reflect.TypeOf(err) == reflect.TypeOf(ProtocolError{}) {
-		return err.(ProtocolError).What == pev
-	}
-	return false
-}
-
 type ProtocolError struct {
-	What ProtocolErrorVariant
-	How  error
+	What error
+	How  string
 }
 
 func (pe ProtocolError) Error() string {
 	variantName := reflect.TypeOf(pe.What).Name()
 
-	return fmt.Sprintf("%s: %s", variantName, pe.How.Error())
+	return fmt.Sprintf("%s: %s", variantName, pe.How)
 }
 
 func (pe ProtocolError) Is(target error) bool {

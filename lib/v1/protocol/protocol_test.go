@@ -3,8 +3,31 @@ package protocol
 import (
 	"bytes"
 	"encoding/gob"
+	"errors"
 	"testing"
 )
+
+func TestNewFileUploadHeaderCreation(t *testing.T) {
+	const fileSize uint64 = CHUNK_SIZE_LARGE * 20
+	const fileName string = "SuperName"
+	const fileChunkSize = CHUNK_SIZE_MEDIUM
+
+	// Valid NewFileUploadHeader
+	_, err := NewFileUploadHeader(fileSize, fileChunkSize, fileName)
+	if err != nil {
+		t.Fail()
+	}
+
+	_, err = NewFileUploadHeader(fileSize, fileSize*2, "Super")
+	if !errors.Is(err, ChunkLargerThanFileError) {
+		t.Fail()
+	}
+
+	_, err = NewFileUploadHeader(fileSize, fileChunkSize, "")
+	if !errors.Is(err, FileNameToSmallError) {
+		t.Fail()
+	}
+}
 
 func TestPacketEncodingDecoding(t *testing.T) {
 	packet := Packet{

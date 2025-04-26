@@ -7,21 +7,20 @@ import (
 
 func TestProtocolErrorIs(t *testing.T) {
 	protoErr := ProtocolError{
-		What: FileNameToLarge,
-		How:  errors.New("Man..."),
+		What: FileNameToLargeError,
+		How:  "Man...",
 	}
-	_ = protoErr
 
-	if !errors.Is(protoErr, FileNameToLarge) {
+	if !errors.Is(protoErr, FileNameToLargeError) {
 		t.Fail()
 	}
 
-	if !errors.Is(protoErr.What, FileNameToLarge) {
+	if !errors.Is(protoErr.What, FileNameToLargeError) {
 		t.Fail()
 	}
 
 	err := errors.New("Super")
-	if errors.Is(err, FileNameToLarge) {
+	if errors.Is(err, FileNameToLargeError) {
 		t.Fail()
 	}
 }

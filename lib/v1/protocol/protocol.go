@@ -1,7 +1,5 @@
 package protocol
 
-import "errors"
-
 type PacketType uint8
 
 const (
@@ -40,22 +38,42 @@ func NewPacket(t PacketType) Packet {
 
 type FileUploadHeader struct {
 	FileSize    uint64 // 8 bytes
-	ChunkSize   uint32 // 4 bytes
+	ChunkSize   uint64 // 8 bytes
 	ChunkCount  uint64 // 8 bytes
 	FileNameLen uint16 // 2 bytes
 	FileName    []byte // n bytes -> size from FileNameLen
 }
 
-func NewFileUploadHeader(fileSize uint64, chunkSize uint32, fileName string) (FileUploadHeader, error) {
-	if len(fileName) > 255 {
-		return FileUploadHeader{}, errors.New("File name to big")
+const (
+	CHUNK_SIZE_SMALL  uint64 = 1 * 1024 * 1024       // 1MB
+	CHUNK_SIZE_MEDIUM        = 5 * CHUNK_SIZE_SMALL  // 5MB
+	CHUNK_SIZE_LARGE         = 10 * CHUNK_SIZE_SMALL // 10MB
+)
+
+func NewFileUploadHeader(
+	fileSize uint64,
+	chunkSize uint64,
+	fileName string,
+) (FileUploadHeader, error) {
+
+	fileNameLength := len(fileName)
+
+	switch {
+	case fileNameLength > 255:
+		return FileUploadHeader{}, ProtocolError{What: FileNameToLargeError}
+
+	case fileNameLength < 1:
+		return FileUploadHeader{}, ProtocolError{What: FileNameToSmallError}
+
+	case chunkSize > fileSize:
+		return FileUploadHeader{}, ProtocolError{What: ChunkLargerThanFileError}
 	}
 
 	return FileUploadHeader{
 		FileSize:    fileSize,
 		ChunkSize:   chunkSize,
 		ChunkCount:  fileSize / uint64(chunkSize),
-		FileNameLen: uint16(len(fileName)),
+		FileNameLen: uint16(fileNameLength),
 		FileName:    []byte(fileName),
 	}, nil
 }
