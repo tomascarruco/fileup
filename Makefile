@@ -2,7 +2,7 @@
 
 # VARIABLES -------------------------------------
 
-server = "cmd/server/main.go"
+server_cmd = "cmd/server/main.go"
 server_out = "fileup_srv"
 
 out_dir = ./go-out
@@ -19,7 +19,7 @@ $(out_dir):
 
 # Build fileup server
 b-server: $(out_dir)
-	go build -o $(out_dir)/$(server_out) $(server)
+	go build -o $(out_dir)/$(server_out) $(server_cmd)
 	chmod +x $(out_dir)/$(server_out)
 
 # Run fileup server
@@ -30,9 +30,9 @@ r-server: b-server
 # TESTING ----------------------------------------
 
 test:
-	go test ./lib/*/** -v
+	go test -vet=all -parallel=4 ./lib/*/** -v
  
 # ALL --------------------------------------------
 
-all: b-server
+all: test b-server
 

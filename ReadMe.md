@@ -1,10 +1,29 @@
 # Fileup
 
-## Steps
+## Intro
 
-0. Send file in chunks of a size that is agreed upon by the client and the server;
-1. Store in a file or sqlite, where a certain file is stored and the transfer status;
-  - The info to store is: File path, name, synced? upload status
-2. After file upload its accessible to user on other machines;
+- - -
 
+## Build - Makefile
 
+**Build server:**
+```bash
+make b-server
+```
+
+**Run server:**
+```bash
+make r-server
+```
+
+**Test All:**
+> Build and test
+```bash
+make all
+```
+
+## Protocol Specification
+
+> File names canot be longer than 255 bytes.
+
+> A Folder's path length cannot be larger than 4096 bytes - including the folder name.
