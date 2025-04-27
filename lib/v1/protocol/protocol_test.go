@@ -7,23 +7,26 @@ import (
 	"testing"
 )
 
+func TestNewFolderCreateInfo(t *testing.T) {
+}
+
 func TestNewFileUploadHeaderCreation(t *testing.T) {
-	const fileSize uint64 = CHUNK_SIZE_LARGE * 20
 	const fileName string = "SuperName"
 	const fileChunkSize = CHUNK_SIZE_MEDIUM
+	const fileSize uint64 = CHUNK_SIZE_LARGE * 20
 
 	// Valid NewFileUploadHeader
-	_, err := NewFileUploadHeader(fileSize, fileChunkSize, fileName)
+	_, err := NewFileUploadInfo(fileSize, fileChunkSize, fileName)
 	if err != nil {
 		t.Fail()
 	}
 
-	_, err = NewFileUploadHeader(fileSize, fileSize*2, "Super")
+	_, err = NewFileUploadInfo(fileSize, fileSize*2, "Super")
 	if !errors.Is(err, ChunkLargerThanFileError) {
 		t.Fail()
 	}
 
-	_, err = NewFileUploadHeader(fileSize, fileChunkSize, "")
+	_, err = NewFileUploadInfo(fileSize, fileChunkSize, "")
 	if !errors.Is(err, FileNameToSmallError) {
 		t.Fail()
 	}
@@ -31,8 +34,8 @@ func TestNewFileUploadHeaderCreation(t *testing.T) {
 
 func TestPacketEncodingDecoding(t *testing.T) {
 	packet := Packet{
-		PacketType: FILE_UP_REQUEST,
-		Header: FileUploadHeader{
+		PacketType: FILE_UP_START,
+		Header: FileUploadInfo{
 			FileSize:    8 * 4024,
 			ChunkSize:   1024,
 			ChunkCount:  (8 * 4024) / 1024,
@@ -62,8 +65,8 @@ func TestPacketEncodingDecoding(t *testing.T) {
 		t.Fatalf("Failed to decode packet, error: %s", err.Error())
 	}
 
-	originalHeader := packet.Header.(FileUploadHeader)
-	receivedHeader := packetReceived.Header.(FileUploadHeader)
+	originalHeader := packet.Header.(FileUploadInfo)
+	receivedHeader := packetReceived.Header.(FileUploadInfo)
 
 	if originalHeader.FileNameLen != receivedHeader.FileNameLen {
 		t.Fail()
