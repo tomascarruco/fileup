@@ -1,31 +1,73 @@
 package server
 
 import (
-	"bufio"
-	"fmt"
+	"encoding/gob"
+	"log"
 	"net"
+	"reflect"
+
+	"github.com/tomascarruco/fileup/lib/v1/protocol"
 )
 
-type Serve struct{}
+/* TODO
+   Setup packet parssing to handle diferent types of actions
+*/
 
-// TODO Fix this to handle errors
+type Serve struct {
+}
+
 func (s Serve) Run() {
+	// TODO Fix this to handle errors
 	ln, _ := net.Listen("tcp4", "0.0.0.0:2345")
 
 	for {
 		conn, _ := ln.Accept()
-		go s.handleConnection(conn)
+		go s.processNewConnection(conn)
 	}
 }
 
-func (s Serve) handleConnection(conn net.Conn) {
-	reader := bufio.NewReader(conn)
+func (s Serve) processNewConnection(conn net.Conn) {
+	// Proabably best put in a pool
+	encoder := gob.NewEncoder(conn)
+	decoder := gob.NewDecoder(conn)
+
 	for {
-		text, err := reader.ReadBytes('\n')
+		// Receive and decode incoming packet
+		var packetReceived protocol.Packet
+		err := decoder.Decode(&packetReceived)
 		if err != nil {
-			fmt.Printf("Error: %s", err.Error())
-			break
+			log.Fatalf("Failed to decode received packet: %s\n", err.Error())
 		}
-		fmt.Printf("-> %s", text)
+
+		packetType := packetReceived.PacketType
+
+		var packet protocol.Packet
+
+		// Handle packet type
+		switch packetType {
+		default:
+			log.Printf(
+				"Skipping this packet type: %s",
+				reflect.TypeOf(packetType).Name(),
+			)
+			continue
+
+		case protocol.PING:
+			packet = protocol.NewPacket(protocol.PONG_RESPONSE)
+
+		}
+
+		switch {
+		case packet.Header != nil:
+			gob.Register(packet.Header)
+
+		case packet.Payload != nil:
+			gob.Register(packet.Payload)
+		}
+
+		err = encoder.Encode(packet)
+		if err != nil {
+			log.Fatalf("Failed to encode packet: %s\n", err.Error())
+		}
 	}
 }
