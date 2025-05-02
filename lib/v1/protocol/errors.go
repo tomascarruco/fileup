@@ -15,7 +15,7 @@ var (
 	FolderNameToSmallError = errors.New("folder name to small for header")
 	FolderPathToSmallError = errors.New("folder path to small for header")
 
-	InvalidLocalFolderAsPathError = errors.New("Cannot use '.' as a path")
+	LocalFolderAsPathError = errors.New("Cannot use '.' as a path")
 
 	ChunkLargerThanFileError = errors.New("chunk size larger than total file size")
 	ReadLargerThenChunkError = errors.New("content cannot feat into chunk")

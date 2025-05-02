@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"reflect"
+	"sync"
 
 	"github.com/tomascarruco/fileup/lib/v1/protocol"
 )
@@ -13,10 +14,40 @@ import (
    Setup packet parssing to handle diferent types of actions
 */
 
-type Serve struct {
+type Server struct {
+	listener *net.Listener
+	ConnInfo struct {
+		Port uint16
+		IP   string
+	}
+	wg              sync.WaitGroup
+	poolWorkerCount uint
+	MaxPools        uint
+	MinPools        uint
 }
 
-func (s Serve) Run() {
+type ServerOption func(*Server)
+
+func NewServer(opt ...ServerOption) *Server {
+	c := new(Server)
+
+	c.MaxPools = 255
+	c.MinPools = 1
+
+	for _, o := range opt {
+		o(c)
+	}
+
+	c.poolWorkerCount = 0
+
+	if c.listener != nil {
+		// c.listener = net.ListenIP()
+	}
+
+	return c
+}
+
+func (s *Server) Run() {
 	// TODO Fix this to handle errors
 	ln, _ := net.Listen("tcp4", "0.0.0.0:2345")
 
@@ -26,7 +57,7 @@ func (s Serve) Run() {
 	}
 }
 
-func (s Serve) processNewConnection(conn net.Conn) {
+func (s *Server) processNewConnection(conn net.Conn) {
 	// Proabably best put in a pool
 	encoder := gob.NewEncoder(conn)
 	decoder := gob.NewDecoder(conn)
@@ -47,14 +78,13 @@ func (s Serve) processNewConnection(conn net.Conn) {
 		switch packetType {
 		default:
 			log.Printf(
-				"Skipping this packet type: %s",
+				"(UNIMPLEMENTED) Skipping this packet type: %s",
 				reflect.TypeOf(packetType).Name(),
 			)
 			continue
 
 		case protocol.PING:
-			packet = protocol.NewPacket(protocol.PONG_RESPONSE)
-
+			packet = protocol.NewPacket(protocol.PONG)
 		}
 
 		switch {

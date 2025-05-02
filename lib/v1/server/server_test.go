@@ -18,7 +18,7 @@ const (
 func TestMain(m *testing.M) {
 	fmt.Println("Setting up...")
 
-	server := Serve{}
+	server := Server{}
 	{
 		go server.Run()
 		time.Sleep(100 * time.Millisecond)
@@ -54,7 +54,7 @@ func TestHandlePingRequest(t *testing.T) {
 		t.Fatalf("Failed to decode packet\n")
 	}
 
-	if packetRec.PacketType != protocol.PONG_RESPONSE {
+	if packetRec.PacketType != protocol.PONG {
 		t.Fatalf("Invalid packet returned, should be PONG, was: %d\n", packet.PacketType)
 	}
 }

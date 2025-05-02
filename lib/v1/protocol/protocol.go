@@ -28,7 +28,7 @@ type PacketType uint8
 
 const (
 	// File management related packet types
-	FILE_UP_START PacketType = iota + 1
+	FILE_UP_DEFINE PacketType = iota + 1
 	FILE_UP_CHUNK
 	// Folder management related packet types
 	FOLDER_CREATE
@@ -36,7 +36,7 @@ const (
 	// End ---
 	// Status related packet types
 	PING
-	PONG_RESPONSE
+	PONG
 )
 
 // Pakcets are sent in Littele Endian order
@@ -74,7 +74,7 @@ func NewFolderCreateInfo(path string) (FolderCreateInfo, error) {
 		return FolderCreateInfo{},
 			ProtocolError{What: FolderPathToLargeError}
 
-	case folderPathLength < 1:
+	case folderPathLength < FOLDER_PATH_MIN_LEN:
 		return FolderCreateInfo{},
 			ProtocolError{What: FolderPathToSmallError}
 	}
@@ -83,7 +83,7 @@ func NewFolderCreateInfo(path string) (FolderCreateInfo, error) {
 
 	if cleanPath == "." {
 		return FolderCreateInfo{},
-			ProtocolError{What: InvalidLocalFolderAsPathError}
+			ProtocolError{What: LocalFolderAsPathError}
 	}
 
 	return FolderCreateInfo{
@@ -122,23 +122,26 @@ func NewFileUploadInfo(
 	fileNameLength := len(fileName)
 
 	switch {
-	case fileNameLength > 255:
-		return FileUploadInfo{}, ProtocolError{
-			What: FileNameToLargeError,
-			How:  "File name is larger than 255 bytes, please reduce it",
-		}
+	case fileNameLength > FILE_NAME_MAX_LEN:
+		return FileUploadInfo{},
+			ProtocolError{
+				What: FileNameToLargeError,
+				How:  "File name is larger than 255 bytes, please reduce it",
+			}
 
-	case fileNameLength < 1:
-		return FileUploadInfo{}, ProtocolError{
-			What: FileNameToSmallError,
-			How:  "File name cant be empty",
-		}
+	case fileNameLength < FILE_NAME_MIN_LEN:
+		return FileUploadInfo{},
+			ProtocolError{
+				What: FileNameToSmallError,
+				How:  "File name cant be empty",
+			}
 
 	case chunkSize > fileSize:
-		return FileUploadInfo{}, ProtocolError{
-			What: ChunkLargerThanFileError,
-			How:  "A single chunk size can't be larger than the size of the file",
-		}
+		return FileUploadInfo{},
+			ProtocolError{
+				What: ChunkLargerThanFileError,
+				How:  "A single chunk size can't be larger than the size of the file",
+			}
 	}
 
 	return FileUploadInfo{

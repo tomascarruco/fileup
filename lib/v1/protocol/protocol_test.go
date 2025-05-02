@@ -7,13 +7,10 @@ import (
 	"testing"
 )
 
-func TestNewFolderCreateInfo(t *testing.T) {
-}
-
 func TestNewFileUploadHeaderCreation(t *testing.T) {
 	const fileName string = "SuperName"
 	const fileChunkSize = CHUNK_SIZE_MEDIUM
-	const fileSize uint64 = CHUNK_SIZE_LARGE * 20
+	const fileSize uint64 = CHUNK_SIZE_MEDIUM * 20
 
 	// Valid NewFileUploadHeader
 	_, err := NewFileUploadInfo(fileSize, fileChunkSize, fileName)
@@ -34,7 +31,7 @@ func TestNewFileUploadHeaderCreation(t *testing.T) {
 
 func TestPacketEncodingDecoding(t *testing.T) {
 	packet := Packet{
-		PacketType: FILE_UP_START,
+		PacketType: FILE_UP_DEFINE,
 		Header: FileUploadInfo{
 			FileSize:    8 * 4024,
 			ChunkSize:   1024,
