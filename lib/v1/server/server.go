@@ -2,10 +2,10 @@ package server
 
 import (
 	"encoding/gob"
+	"fmt"
 	"log"
 	"net"
 	"reflect"
-	"sync"
 
 	"github.com/tomascarruco/fileup/lib/v1/protocol"
 )
@@ -14,16 +14,16 @@ import (
    Setup packet parssing to handle diferent types of actions
 */
 
+const (
+	DEFAULT_SERVER_PORT      = 8765
+	DEFAULT_SERVER_LISTEN_IP = "0.0.0.0"
+)
+
 type Server struct {
-	listener *net.Listener
-	ConnInfo struct {
-		Port uint16
-		IP   string
-	}
-	wg              sync.WaitGroup
+	ServerConfigurable
+
+	listener        net.Listener
 	poolWorkerCount uint
-	MaxPools        uint
-	MinPools        uint
 }
 
 type ServerOption func(*Server)
@@ -31,8 +31,15 @@ type ServerOption func(*Server)
 func NewServer(opt ...ServerOption) *Server {
 	c := new(Server)
 
-	c.MaxPools = 255
-	c.MinPools = 1
+	c.Network = struct {
+		Port uint16
+		IP   string
+	}{
+		Port: DEFAULT_SERVER_PORT,
+		IP:   DEFAULT_SERVER_LISTEN_IP,
+	}
+
+	c.Computing.MaxWorkers = 255
 
 	for _, o := range opt {
 		o(c)
@@ -41,23 +48,34 @@ func NewServer(opt ...ServerOption) *Server {
 	c.poolWorkerCount = 0
 
 	if c.listener != nil {
-		// c.listener = net.ListenIP()
+		return c
 	}
+
+	baseAddress := fmt.Sprintf("%s:%d", c.Network.IP, c.Network.Port)
+
+	address := net.ParseIP(baseAddress)
+	if address == nil {
+		address = net.ParseIP("0.0.0.0:8765")
+	}
+
+	listener, err := net.Listen("tcp4", address.String())
+	if err != nil {
+		log.Printf("Could not bind to address: %s", err.Error())
+	}
+	c.listener = listener
 
 	return c
 }
 
-func (s *Server) Run() {
+func (s Server) Run() {
 	// TODO Fix this to handle errors
-	ln, _ := net.Listen("tcp4", "0.0.0.0:2345")
-
 	for {
-		conn, _ := ln.Accept()
+		conn, _ := s.listener.Accept()
 		go s.processNewConnection(conn)
 	}
 }
 
-func (s *Server) processNewConnection(conn net.Conn) {
+func (s Server) processNewConnection(conn net.Conn) {
 	// Proabably best put in a pool
 	encoder := gob.NewEncoder(conn)
 	decoder := gob.NewDecoder(conn)
